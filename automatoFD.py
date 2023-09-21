@@ -17,20 +17,20 @@ class AFD:
         self.__deuErro = False
 
     def __str__(self) -> str:
-        s = "AFD (E, A, T, I, F): \n"
-        str_ = [str(self.estados),str(self.alfabeto),str(self.estados_final)]
+        s = "AFD (E, A, T, i, F): \n"
+        str_ = [str(self.estados),str(list(self.alfabeto)),str(self.estados_final)]
         for st in str_:
             str_[str_.index(st)] = st.replace("[", "{").replace("]", "}")
         s += f"    E = {str_[0]} \n    A = {str_[1]} \n    T = {'{'}"
         for (e,a) in self.transicoes.keys():
-            s += f" ({e},{a}) --> {self.transicoes[(e,a)]},"
-        s += f" {'}'} \n    i = {self.estado_inicial} \n    F = {str_[2]}"
+            s += f" ({e}, {a}) --> {self.transicoes[(e,a)]},"
+        s += f"{'}'} \n    i = {self.estado_inicial} \n    F = {str_[2]}"
         return s
         
     def defEstados(self,estados:list):
         self.estados = estados
 
-    def setEstadoInicial(self,estado):
+    def setEstadoInicial(self,estado: str):
         if estado in self.estados:
             self.estado_inicial = estado
             self.__estadoAtual = estado
@@ -52,9 +52,9 @@ class AFD:
     def setTransicao(self,origem,valor,destino):
         #Criar transição (origem, valor) -> destino
         if origem not in self.estados or destino not in self.estados: return False
-        if valor not in self.alfabeto or len(valor) != 1: return False
+        if str(valor) not in self.alfabeto or len(str(valor)) != 1: return False
 
-        self.transicoes[(origem, valor)] = destino
+        self.transicoes[(str(origem), str(valor))] = str(destino)
         return True
 
     def resetTransicao(self,origem,valor,destino):
@@ -68,8 +68,8 @@ class AFD:
         for simbolo in  cadeia:
             if not simbolo in self.alfabeto:
                 self.__deuErro = True
-                return -1 
-            if (self.__estadoAtual, simbolo) in self.transicoes.keys():
+                return -1
+            if (str(self.__estadoAtual), str(simbolo)) in self.transicoes.keys():
                 novoEstado = self.transicoes[(self.__estadoAtual, simbolo)]
                 self.__estadoAtual = novoEstado
             else:
@@ -78,35 +78,49 @@ class AFD:
             
         return self.__estadoAtual
 
+    def mult_move(self,cadeias : list):
+        resul = {}
+        for cadeia in cadeias:
+            if (self.move(cadeia) in self.estados_final):
+                resul[cadeia] = 'Valido'
+            else:
+                resul[cadeia] = 'Invalido'
+        return resul
+
     def salvar(self, arquivo: str):
         with open(arquivo, "w") as arq:
-            arq.write("Estados: " + str(self.estados) + "\n")
-            arq.write(f"Transicoes: {str(self.transicoes)}")
-            arq.write("Estados finais: " + str(self.estados_final) + "\n")
 
+            def con_string(dicionario: dict):
+                return {(str(chave[0]),str(chave[1])): str(valor) for chave, valor in dicionario.items()}
+            
+            arq.write("Estados: " + str(self.estados) + "\n")
+            arq.write("Alfabeto: '" + str((self.alfabeto)) + "'\n") 
+            arq.write(f"Transicoes: {con_string(self.transicoes)}\n")
+            arq.write("Estado Inicial: " + str(self.estado_inicial) + "\n")  
+            arq.write("Estados finais: " + str(self.estados_final) + "\n")
         return True
     
     def carregar(self, arquivo: str):
         try:
-            #Reset=ar para move operacionar de forma adequada
-            self.__estadoAtual = self.estado_inicial
-            self.__deuErro = False
-
             with open(arquivo, "r") as arq:
-                lines = arq.readlines()
-                for line in lines:
-                    if line.startswith("Estados:"):
-                        estados = eval(line.split("Estados: ")[1])
-                        self.defEstados(estados)
-                    elif line.startswith("Transicoes:"):
-                        transicoes = eval(line.split("Transicoes: ")[1])
-                        self.transicoes = transicoes
-                    elif line.startswith("Estados finais:"):
-                        estados_finais = eval(line.split("Estados finais: ")[1])
-                        self.setEstadoFinal(estados_finais)
-                        return True
-            return False
-        except:
+                dados = arq.read()
+
+            dados = dados.split("\n")
+            for linha in dados:
+                if linha.startswith("Estados: "):
+                    self.estados = eval(linha.split("Estados: ")[1])
+                elif linha.startswith("Alfabeto: "):
+                    self.alfabeto = eval(linha.split("Alfabeto: ")[1])
+                elif linha.startswith("Transicoes: "):
+                    self.transicoes = eval(linha.split("Transicoes: ")[1])
+                elif linha.startswith("Estado Inicial: "):
+                    self.estado_inicial = str(linha.split("Estado Inicial: ")[1])
+                    self.__estadoAtual = self.estado_inicial
+                elif linha.startswith("Estados finais: "):
+                    self.estados_final = eval(linha.split("Estados finais: ")[1])
+            return True
+        except Exception as e:
+            print(f"Erro ao carregar o arquivo: {e}")
             return False
 
     def copyAFD(self):
@@ -117,43 +131,19 @@ class AFD:
         nAfd.transicoes = self.transicoes.copy()  # Copiar dicionário de transições
 
         return nAfd
+    
+    '''
+    2. Algoritmo de Minimização, incluindo:
+    ... desenvolva um procedimento para calcular os estados equivalentes de um AFD.
+    ... desenvolva um procedimento para testar a equivalência entre dois AFD fornecidos.
+    ... desenvolva um procedimento para calcular o autômato minimizado para um AFD fornecido.
+    '''
 
 if __name__ == "__main__":
-    af = AFD("ab")
-
-    af.defEstados([1,2,3,4])
-    af.setEstadoInicial(1)
-    af.setEstadoFinal([1])
-
-    af.setTransicao(1,'a',2)
-    af.setTransicao(1,'b',3)
-
-    af.setTransicao(2,'a',1)
-    af.setTransicao(2,'b',4)
-
-    af.setTransicao(3,'a',4)
-    af.setTransicao(3,'b',1)
-
-    af.setTransicao(4,'a',3)
-    af.setTransicao(4,'b',2)
-
-    if af.move("ababab") in af.estados_final:
-        print("Sucess")
-    else:
-        print("Erro")
-
-    print(af)
-
-    n = af.copyAFD()
-    n.resetEstadoFinal([4])
-    n.setEstadoInicial(2)
-
-    n.resetTransicao(2,'c',2)
-
-    print(n)
-
-    if n.move("ababab") in n.estados_final:
-        print("Sucess")
-    else:
-        print("Erro")
     
+    nAfd = AFD("01")
+    nAfd.carregar("afd.txt")
+    print(nAfd)
+
+    r = nAfd.mult_move(["011","101001","11101","01100101"])
+    print(f"Multiplos Teste: {r}")
