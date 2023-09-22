@@ -6,7 +6,7 @@
 '''
 
 class AFD:
-    def __init__(self, alfabeto):
+    def __init__(self, alfabeto: str):
         self.alfabeto = str(alfabeto)
         self.estados = []
         self.transicoes = dict()
@@ -16,7 +16,7 @@ class AFD:
         self.__estadoAtual = None
         self.__deuErro = False
 
-    def __str__(self) -> str:
+    def __str__(self) -> str: #Metodo que permite chamar print(afd)
         s = "AFD (E, A, T, i, F): \n"
         str_ = [str(self.estados),str(list(self.alfabeto)),str(self.estados_final)]
         for st in str_:
@@ -29,6 +29,9 @@ class AFD:
         
     def defEstados(self,estados:list):
         self.estados = estados
+    
+    def newEstado(self,estado : str):
+        self.estados.append(estado)
 
     def setEstadoInicial(self,estado: str):
         if estado in self.estados:
@@ -137,13 +140,39 @@ class AFD:
     ... desenvolva um procedimento para calcular os estados equivalentes de um AFD.
     ... desenvolva um procedimento para testar a equivalência entre dois AFD fornecidos.
     ... desenvolva um procedimento para calcular o autômato minimizado para um AFD fornecido.
+
+    -> Requisitos:
+        1- Estados Inacessíveis são Indiferentes ao processo (Devem ser Ignorados)
+        2- O automato deve ser completo (Todas as função de transição presente)
     '''
 
+    def isafd_Compl(self):
+        n_afd = AFD(self.alfabeto)
+        n_afd = self.copyAFD()
+
+        def estadoErro():
+            if "err" not in n_afd.estados:
+                for i in n_afd.alfabeto: 
+                    n_afd.newEstado("err")
+                    n_afd.setTransicao("err",i,"err")
+            return "err"
+        
+        for estado in n_afd.estados:
+            if estado != n_afd.estado_inicial:
+                for letra in n_afd.alfabeto:
+                    try: destino = n_afd.transicoes[(estado,letra)]
+                    except: #AFD incompleto, adc estado de erro
+                        n_afd.transicoes[(estado,letra)] = estadoErro()
+        
+        return n_afd
+                       
 if __name__ == "__main__":
     
     nAfd = AFD("01")
-    nAfd.carregar("afd.txt")
+    nAfd.carregar("afd1.txt")
     print(nAfd)
+    n = nAfd.isafd_Compl()
+    print(n)
 
     r = nAfd.mult_move(["011","101001","11101","01100101"])
     print(f"Multiplos Teste: {r}")
