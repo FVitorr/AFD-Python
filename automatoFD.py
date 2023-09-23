@@ -4,6 +4,10 @@
 ... carregar o AFD de um arquivo texto;
 ... criar cópia do AFD.
 '''
+import random
+letras = 'abcdefghijklmnopqrstuvwxyz'  # Sequência de letras minúsculas
+
+
 
 class AFD:
     def __init__(self, alfabeto: str):
@@ -34,9 +38,9 @@ class AFD:
         self.estados.append(estado)
 
     def setEstadoInicial(self,estado: str):
-        if estado in self.estados:
-            self.estado_inicial = estado
-            self.__estadoAtual = estado
+        if str(estado) in str(self.estados):
+            self.estado_inicial = str(estado)
+            self.__estadoAtual = str(estado)
             return True
         return False
     
@@ -73,7 +77,7 @@ class AFD:
                 self.__deuErro = True
                 return -1
             if (str(self.__estadoAtual), str(simbolo)) in self.transicoes.keys():
-                novoEstado = self.transicoes[(self.__estadoAtual, simbolo)]
+                novoEstado = self.transicoes[(str(self.__estadoAtual), str(simbolo))]
                 self.__estadoAtual = novoEstado
             else:
                 self.__deuErro = True
@@ -84,7 +88,8 @@ class AFD:
     def mult_move(self,cadeias : list):
         resul = {}
         for cadeia in cadeias:
-            if (self.move(cadeia) in self.estados_final):
+            print(self.move(cadeia),self.estados_final)
+            if str(self.move(cadeia)) in map(lambda x: str(x), self.estados_final):
                 resul[cadeia] = 'Valido'
             else:
                 resul[cadeia] = 'Invalido'
@@ -129,7 +134,7 @@ class AFD:
     def copyAFD(self):
         nAfd = AFD(self.alfabeto)
         nAfd.defEstados(self.estados.copy())
-        nAfd.setEstadoInicial(self.estado_inicial)  # Copiar estado inicial
+        nAfd.setEstadoInicial(self.estado_inicial)
         nAfd.setEstadoFinal(self.estados_final.copy())  # Copiar estados finais
         nAfd.transicoes = self.transicoes.copy()  # Copiar dicionário de transições
 
@@ -148,7 +153,7 @@ nimizado para um AF
     def remE_Inace(self):
         n_afd = self.copyAFD()
         acess = set(n_afd.transicoes[destino] for destino in n_afd.transicoes)
-        rem_state = [estado for estado in n_afd.estados if estado != n_afd.estado_inicial and estado not in acess]
+        rem_state = [estado for estado in n_afd.estados if str(estado) != n_afd.estado_inicial and estado not in acess]
 
         for rem_stat in rem_state:
             n_afd.estados.remove(rem_stat)
@@ -159,29 +164,79 @@ nimizado para um AF
 
     def Compl_afd(self):
         def estadoErro():
-            if "err" not in self.estados:
-                self.newEstado("err")
-                for i in self.alfabeto:
-                    self.setTransicao("err", i, "err")
-            return "err"
-
+            while(1):
+                err = "ee"
+                if str(err) not in self.estados:
+                    self.newEstado(str(err))
+                    for i in self.alfabeto:
+                        self.setTransicao(str(err), i, str(err))
+                    return err
         for estado in self.estados:
             for letra in self.alfabeto:
-                if (estado, letra) not in self.transicoes:
+                if (str(estado), str(letra)) not in self.transicoes:
                     self.setTransicao(estado,letra, estadoErro())
+
+    def min_afd(self):
+        def creat_dict():
+            est = sorted(self.estados)
+            dic = {}
+            for i in range(1, len(est)):
+                for j in range(0, len(est) - 1):
+                    dic[(est[i], est[j])] = 0
+            return dic
+
+        grupos = [set(self.estados_final), set(self.estados) - set(self.estados_final)]
+
+        while True:
+            novos_grupos = []
+
+            for grupo in grupos:
+                subgrupos = {}
+                for estado in grupo:
+                    transicoes = [self.transicoes.get((estado, letra), None) for letra in self.alfabeto]
+                    subgrupos[tuple(transicoes)] = subgrupos.get(tuple(transicoes), set()) | {estado}
+                novos_grupos.extend(subgrupos.values())
+
+            if novos_grupos == grupos:
+                break
+            grupos = novos_grupos
+
+        novo_afd = AFD(self.alfabeto)
+        novo_afd.defEstados(['Q' + str(i) for i in range(len(grupos))])
+        novo_afd.setEstadoInicial('Q' + str(grupos.index(set(self.estados_final))))
+
+        for grupo in grupos:
+            if set(self.estados_final) & grupo:
+                novo_afd.setEstadoFinal(['Q' + str(grupos.index(grupo))])
+
+        for grupo in grupos:
+            for letra in self.alfabeto:
+                transicoes_grupo = [self.transicoes.get((estado, letra), None) for estado in grupo]
+                transicoes_tuple = tuple(transicoes_grupo)
+                if None in transicoes_grupo:
+                    transicao = None
+                else:
+                    transicao = grupos.index(subgrupos.get(transicoes_tuple, None))
+                novo_afd.setTransicao('Q' + str(grupos.index(grupo)), letra, 'Q' + str(transicao))
+
+        self.estados = novo_afd.estados
+        self.transicoes = novo_afd.transicoes.copy()
+        self.estado_inicial = novo_afd.estado_inicial
+        self.estados_final = novo_afd.estados_final
+
+
+            
                        
 if __name__ == "__main__":
     
-    nAfd = AFD("01")
-    nAfd.carregar("afd1.txt")
-    
-    print(nAfd,'\n\n')
-    n = nAfd.remE_Inace()
-    n.Compl_afd()
-    print(n)
-    
+    nAfd = AFD("ab")
+    nAfd.carregar("afd.txt")
+    nAfd_ = nAfd.remE_Inace()
+    nAfd_.Compl_afd()
 
+    print(nAfd_,'\n\n')
+    nAfd.min_afd()
+    print(nAfd)
 
-
-    r = nAfd.mult_move(["011","101001","11101","01100101"])
+    r = nAfd_.mult_move(["bbabb","aaaa","bbabbb"])
     print(f"Multiplos Teste: {r}")
