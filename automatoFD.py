@@ -177,17 +177,88 @@ nimizado para um AF
                     self.setTransicao(estado,letra, estadoErro())
 
     def min_afd(self):
-        def creat_dict():
-            est = sorted(self.estados)
-            dic = {}
-            for i in range(1, len(est)):
-                for j in range(0, (len(est) + i) - len(est) ):
-                    if (est[i] != est[j]):
-                        dic[(est[i], est[j])] = 0
-            return dic
+        est = sorted(self.estados)  # Ordena os estados
 
-        #Marcar Estados não equivalentes
-        print(creat_dict())
+        def create_dict():
+            dic = {}
+            key_list = []
+            for i in range(1, len(est)):
+                for j in range(0, i):
+                    if est[i] != est[j]:
+                        dic[(str(est[i]), str(est[j]))] = 0
+                        key_list.append((str(est[i]), str(est[j])))
+            return dic, key_list
+
+        def print_table(table):
+            str_ = ''
+            for i in range(1, len(est)):
+                str_ += '\n'
+                for j in range(0, i):
+                    if est[i] != est[j]:
+                        str_ += str(table[(str(est[i]), str(est[j]))])
+            return str_
+
+        # 1ª - Marcar estados não equivalentes inicialmente
+        non_final_states = set([estado for estado in self.estados if estado not in self.estados_final])
+        key = [set((str(j), str(i))) for j in non_final_states for i in self.estados_final]
+
+        table, key_list = create_dict()
+        for key_ in table.keys():
+            if set(key_) in key:
+                table[key_] = 1
+
+        # 2ª - Criar dicionário de quem chega ao estado
+        # "Nome_do_estado" : [("qm_chega_A")("qm_chega_B")]
+        # chega = {1: [('0', 'b'), ('1', 'a')], 2: [('0', 'a'), ('4', 'b'), ('5', 'a')]}
+        chega = dict()
+        alphabet = sorted(list(self.alfabeto))
+
+        for est_ in est:
+            for key in self.transicoes.keys():
+                if self.transicoes[key] == str(est_):
+                    if str(est_) not in chega.keys():
+                        chega[str(est_)] = [key]
+                    else:
+                        chega[str(est_)].append(key)
+
+        # 3ª - Analisar a "Tabela"
+        an = []
+        while True:
+            changes = False  # Variável para rastrear se houve mudanças nesta iteração
+
+            for key_ in key_list: #Key_list variaveis marcadas na primeira etapa
+                if table[key_] >= 1: #Se for 0 não deve ser analisado
+                    ch, ch1 = key_ #Chave para encontrar qm_chega ao estado com 1 simbolo
+                    for i in chega[ch]:
+                        for j in chega[ch1]:
+                            if (i[1] == j[1]): #verificar se são mesma letras
+                                pair = (j[0], i[0])
+                                if pair not in an: 
+                                    an.append(pair)
+                                    for keys in table.keys():
+                                        if set(keys) == set(pair):
+                                            table[keys] += 1 #incrementar um a chave encontrada com a concatenção dos estados
+                                    changes = True  # Marcamos que houve uma mudança
+            if not changes:
+                break  # Se não houver mudanças nesta iteração, saia do loop
+
+        print(an)
+
+        print(print_table(table=table))
+                
+
+
+
+
+
+
+
+
+
+
+
+
+        
 
 
             
