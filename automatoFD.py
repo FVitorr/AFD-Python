@@ -139,40 +139,49 @@ class AFD:
     2. Algoritmo de Minimização, incluindo:
     ... desenvolva um procedimento para calcular os estados equivalentes de um AFD.
     ... desenvolva um procedimento para testar a equivalência entre dois AFD fornecidos.
-    ... desenvolva um procedimento para calcular o autômato minimizado para um AFD fornecido.
-
+    ... desenvolva um procedimento para calcular o autômato miD fornecido.
+nimizado para um AF
     -> Requisitos:
         1- Estados Inacessíveis são Indiferentes ao processo (Devem ser Ignorados)
         2- O automato deve ser completo (Todas as função de transição presente)
     '''
-
-    def isafd_Compl(self):
-        n_afd = AFD(self.alfabeto)
+    def remE_Inace(self):
         n_afd = self.copyAFD()
+        acess = set(n_afd.transicoes[destino] for destino in n_afd.transicoes)
+        rem_state = [estado for estado in n_afd.estados if estado != n_afd.estado_inicial and estado not in acess]
 
-        def estadoErro():
-            if "err" not in n_afd.estados:
-                for i in n_afd.alfabeto: 
-                    n_afd.newEstado("err")
-                    n_afd.setTransicao("err",i,"err")
-            return "err"
-        
-        for estado in n_afd.estados:
-            if estado != n_afd.estado_inicial:
-                for letra in n_afd.alfabeto:
-                    try: destino = n_afd.transicoes[(estado,letra)]
-                    except: #AFD incompleto, adc estado de erro
-                        n_afd.transicoes[(estado,letra)] = estadoErro()
-        
+        for rem_stat in rem_state:
+            n_afd.estados.remove(rem_stat)
+            for letter in n_afd.alfabeto:
+                n_afd.transicoes.pop((rem_stat, letter), None)
+
         return n_afd
+
+    def Compl_afd(self):
+        def estadoErro():
+            if "err" not in self.estados:
+                self.newEstado("err")
+                for i in self.alfabeto:
+                    self.setTransicao("err", i, "err")
+            return "err"
+
+        for estado in self.estados:
+            for letra in self.alfabeto:
+                if (estado, letra) not in self.transicoes:
+                    self.setTransicao(estado,letra, estadoErro())
                        
 if __name__ == "__main__":
     
     nAfd = AFD("01")
     nAfd.carregar("afd1.txt")
-    print(nAfd)
-    n = nAfd.isafd_Compl()
+    
+    print(nAfd,'\n\n')
+    n = nAfd.remE_Inace()
+    n.Compl_afd()
     print(n)
+    
+
+
 
     r = nAfd.mult_move(["011","101001","11101","01100101"])
     print(f"Multiplos Teste: {r}")
