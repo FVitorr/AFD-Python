@@ -181,48 +181,13 @@ nimizado para um AF
             est = sorted(self.estados)
             dic = {}
             for i in range(1, len(est)):
-                for j in range(0, len(est) - 1):
-                    dic[(est[i], est[j])] = 0
+                for j in range(0, (len(est) + i) - len(est) ):
+                    if (est[i] != est[j]):
+                        dic[(est[i], est[j])] = 0
             return dic
 
-        grupos = [set(self.estados_final), set(self.estados) - set(self.estados_final)]
-
-        while True:
-            novos_grupos = []
-
-            for grupo in grupos:
-                subgrupos = {}
-                for estado in grupo:
-                    transicoes = [self.transicoes.get((estado, letra), None) for letra in self.alfabeto]
-                    subgrupos[tuple(transicoes)] = subgrupos.get(tuple(transicoes), set()) | {estado}
-                novos_grupos.extend(subgrupos.values())
-
-            if novos_grupos == grupos:
-                break
-            grupos = novos_grupos
-
-        novo_afd = AFD(self.alfabeto)
-        novo_afd.defEstados(['Q' + str(i) for i in range(len(grupos))])
-        novo_afd.setEstadoInicial('Q' + str(grupos.index(set(self.estados_final))))
-
-        for grupo in grupos:
-            if set(self.estados_final) & grupo:
-                novo_afd.setEstadoFinal(['Q' + str(grupos.index(grupo))])
-
-        for grupo in grupos:
-            for letra in self.alfabeto:
-                transicoes_grupo = [self.transicoes.get((estado, letra), None) for estado in grupo]
-                transicoes_tuple = tuple(transicoes_grupo)
-                if None in transicoes_grupo:
-                    transicao = None
-                else:
-                    transicao = grupos.index(subgrupos.get(transicoes_tuple, None))
-                novo_afd.setTransicao('Q' + str(grupos.index(grupo)), letra, 'Q' + str(transicao))
-
-        self.estados = novo_afd.estados
-        self.transicoes = novo_afd.transicoes.copy()
-        self.estado_inicial = novo_afd.estado_inicial
-        self.estados_final = novo_afd.estados_final
+        #Marcar Estados não equivalentes
+        print(creat_dict())
 
 
             
