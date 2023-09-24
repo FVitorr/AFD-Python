@@ -88,7 +88,6 @@ class AFD:
     def mult_move(self,cadeias : list):
         resul = {}
         for cadeia in cadeias:
-            print(self.move(cadeia),self.estados_final)
             if str(self.move(cadeia)) in map(lambda x: str(x), self.estados_final):
                 resul[cadeia] = 'Valido'
             else:
@@ -242,26 +241,25 @@ nimizado para um AF
             if not changes:
                 break  # Se não houver mudanças nesta iteração, saia do loop
 
-        print(an)
+        #print(an)
 
         print(print_table(table=table))
-                
+        # 4ª - Criar um novo AFD minimizado
+        estados_eq = [key_ for key_ in table.keys() if table[key_] == 0]
+        estados_minimizados ={}
+        for pair in an:
+            if pair[0] not in estados_minimizados:
+                estados_minimizados[pair[0]] = [pair[1]]
+            else:
+                estados_minimizados[pair[0]].append(pair[1])
+
+        for key, value in estados_minimizados.items():
+            print(key)
+
+        print(estados_eq,estados_minimizados)
 
 
-
-
-
-
-
-
-
-
-
-
-        
-
-
-            
+                    
                        
 if __name__ == "__main__":
     
@@ -272,7 +270,6 @@ if __name__ == "__main__":
 
     print(nAfd_,'\n\n')
     nAfd.min_afd()
-    print(nAfd)
 
     r = nAfd_.mult_move(["bbabb","aaaa","bbabbb"])
     print(f"Multiplos Teste: {r}")
