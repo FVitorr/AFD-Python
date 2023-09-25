@@ -224,7 +224,6 @@ nimizado para um AF
         an = []
         while True:
             changes = False  # Variável para rastrear se houve mudanças nesta iteração
-
             for key_ in key_list: #Key_list variaveis marcadas na primeira etapa
                 if table[key_] >= 1: #Se for 0 não deve ser analisado
                     ch, ch1 = key_ #Chave para encontrar qm_chega ao estado com 1 simbolo
@@ -246,17 +245,19 @@ nimizado para um AF
         print(print_table(table=table))
         # 4ª - Criar um novo AFD minimizado
         estados_eq = [key_ for key_ in table.keys() if table[key_] == 0]
-        estados_minimizados ={}
-        for pair in an:
-            if pair[0] not in estados_minimizados:
-                estados_minimizados[pair[0]] = [pair[1]]
-            else:
-                estados_minimizados[pair[0]].append(pair[1])
+        n_est = [str(elemento) for elemento in est]
 
-        for key, value in estados_minimizados.items():
-            print(key)
+        for est_eq in estados_eq:
+            for i in est_eq:
+                try:
+                    n_est.remove(i)
+                except:
+                    pass
+        estados_eq.append(n_est)
 
-        print(estados_eq,estados_minimizados)
+                    
+
+        print(estados_eq)
 
 
                     
