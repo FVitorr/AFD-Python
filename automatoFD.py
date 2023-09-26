@@ -72,6 +72,7 @@ class AFD:
             return False
 
     def move(self, cadeia):
+        self.__estadoAtual = self.estado_inicial
         for simbolo in  cadeia:
             if not simbolo in self.alfabeto:
                 self.__deuErro = True
@@ -152,7 +153,7 @@ nimizado para um AF
     def remE_Inace(self):
         n_afd = self.copyAFD()
         acess = set(n_afd.transicoes[destino] for destino in n_afd.transicoes)
-        rem_state = [estado for estado in n_afd.estados if str(estado) != n_afd.estado_inicial and estado not in acess]
+        rem_state = [estado for estado in n_afd.estados if str(estado) != str(n_afd.estado_inicial) and str(estado) not in acess]
 
         for rem_stat in rem_state:
             n_afd.estados.remove(rem_stat)
@@ -175,7 +176,7 @@ nimizado para um AF
                 if (str(estado), str(letra)) not in self.transicoes:
                     self.setTransicao(estado,letra, estadoErro())
 
-    def min_afd(self):
+    def ver_equal(self):
         est = sorted(self.estados)  # Ordena os estados
 
         def create_dict():
@@ -242,35 +243,109 @@ nimizado para um AF
 
         #print(an)
 
-        print(print_table(table=table))
+        #print(print_table(table=table))
         # 4ª - Criar um novo AFD minimizado
         estados_eq = [key_ for key_ in table.keys() if table[key_] == 0]
-        n_est = [str(elemento) for elemento in est]
+        # n_est = [str(elemento) for elemento in est]
 
-        for est_eq in estados_eq:
-            for i in est_eq:
-                try:
-                    n_est.remove(i)
-                except:
-                    pass
-        estados_eq.append(n_est)
+        # for est_eq in estados_eq:
+        #     for i in est_eq:
+        #         try:
+        #             n_est.remove(i)
+        #         except:
+        #             pass
+        # estados_eq.append(n_est)
 
-                    
+        # print(estados_eq)
+        return estados_eq
 
-        print(estados_eq)
 
+    def min_afd(self):
+        #Determinar estados
+        estado_eq = self.ver_equal()
+        ren_estados = {} # old_valor : new_valor
+        n_est = [str(elemento) for elemento in self.estados]
 
-                    
-                       
+        for el in estado_eq:
+            key1,key2 = el
+            ren_estados[key1] = el[0]
+            ren_estados[key2] = el[0]
+        
+        for est in n_est:
+            if est not in ren_estados:
+                ren_estados[ str(est)] = str(est)
+
+        #print(ren_estados)
+        #Novos estados Obtidos
+        n_estados = [ren_estados[key] for key in ren_estados.keys()]
+        n_estados = sorted(list(set(n_estados)))
+        #print(n_estados)
+        #Refazer transiçoes
+        n_trans = {}
+        for trans, value in self.transicoes.items():
+            estado = ren_estados[trans[0]]
+            letter = trans[1]
+            destino = ren_estados[value]
+
+            n_trans[(estado,letter)] = destino
+        #print(n_trans)
+
+        #Novo AFD MINIMIZADO
+        n_AFD = AFD(self.alfabeto)
+        n_AFD.transicoes = n_trans
+        
+        n_AFD.defEstados(n_estados)
+        n_AFD.setEstadoInicial(ren_estados[self.estado_inicial])
+        est_F = [ren_estados[str(est)] for est in self.estados_final]
+        n_AFD.setEstadoFinal(list(set(est_F)))
+
+        return n_AFD
+                   
+
 if __name__ == "__main__":
     
-    nAfd = AFD("ab")
-    nAfd.carregar("afd.txt")
+    nAfd = AFD("01")
+   
+    nAfd.defEstados(['A','B','C','D','E','F','G','H'])
+    nAfd.setEstadoFinal(['C'])
+    nAfd.setEstadoInicial("A")
+
+    nAfd.setTransicao('A',0,'B')
+    nAfd.setTransicao('A',1,'F')
+
+    nAfd.setTransicao('B',0,'G')
+    nAfd.setTransicao('B',1,'C')
+
+    nAfd.setTransicao('C',0,'A')
+    nAfd.setTransicao('C',1,'C')
+
+    nAfd.setTransicao('D',0,'C')
+    nAfd.setTransicao('D',1,'G')
+
+    nAfd.setTransicao('E',0,'H')
+    nAfd.setTransicao('E',1,'F')
+
+    nAfd.setTransicao('F',0,'C')
+    nAfd.setTransicao('F',1,'G')
+
+    nAfd.setTransicao('G',0,'G')
+    nAfd.setTransicao('G',1,'E')
+
+    nAfd.setTransicao('H',0,'G')
+    nAfd.setTransicao('H',1,'C')
+
+    nAfd.salvar("afd1.txt")
+
     nAfd_ = nAfd.remE_Inace()
+    print(nAfd_)
     nAfd_.Compl_afd()
 
-    print(nAfd_,'\n\n')
-    nAfd.min_afd()
+    n_afd = nAfd_.min_afd()
 
-    r = nAfd_.mult_move(["bbabb","aaaa","bbabbb"])
+    print(nAfd_)
+    r = nAfd_.mult_move(["110101","00101","11001"])
+    print(f"Multiplos Teste: {r}")
+
+    print(f"\n\n{n_afd}")
+    r = n_afd.mult_move(["110101","00101","11001"])
     print(f"Multiplos Teste: {r}")
