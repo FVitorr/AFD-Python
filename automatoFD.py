@@ -31,9 +31,9 @@ class AFD:
         s += f"{'}'} \n    i = {self.estado_inicial} \n    F = {str_[2]}"
         return s
         
-    def defEstados(self,estados:list):
-        self.estados = estados
-    
+    def defEstados(self, estados: list):
+        self.estados = [str(estado) for estado in estados]
+
     def newEstado(self,estado : str):
         self.estados.append(estado)
 
@@ -49,7 +49,7 @@ class AFD:
             if i not in self.estados:
                 return False
         
-        for estado in estados: self.estados_final.append(estado)
+        for estado in estados: self.estados_final.append(str(estado))
         return True
     
     def resetEstadoFinal(self,estados: list):
@@ -58,7 +58,7 @@ class AFD:
 
     def setTransicao(self,origem,valor,destino):
         #Criar transição (origem, valor) -> destino
-        if origem not in self.estados or destino not in self.estados: return False
+        if str(origem) not in self.estados or str(destino) not in self.estados: return False
         if str(valor) not in self.alfabeto or len(str(valor)) != 1: return False
 
         self.transicoes[(str(origem), str(valor))] = str(destino)
@@ -145,7 +145,7 @@ class AFD:
     ... desenvolva um procedimento para calcular os estados equivalentes de um AFD.
     ... desenvolva um procedimento para testar a equivalência entre dois AFD fornecidos.  --> FAZER AINDA
     ... desenvolva um procedimento para calcular o autômato miD fornecido.
-nimizado para um AF
+    nimizado para um AF
     -> Requisitos:
         1- Estados Inacessíveis são Indiferentes ao processo (Devem ser Ignorados)
         2- O automato deve ser completo (Todas as função de transição presente)
@@ -316,15 +316,17 @@ nimizado para um AF
         s_estado = sAFD.estados
 
         # Multiplicação dos conjuntos
-        mult_estados = set([str(x) + str(y) for x in p_estado for y in s_estado])
+        mult_estados = set([(str(x) , str(y)) for x in p_estado for y in s_estado])
 
-        
+        transicao = {}
         for i in mult_estados:
             for letter in self.alfabeto:
                 key_one = self.transicoes[(i[0],letter)]
                 key_two = sAFD.transicoes[(i[1],letter)]
 
-                print(key_one,key_two)
+                transicao[(i[0]+i[1],letter)] = key_one + key_two
+        
+        print(transicao)
 
 
 
@@ -333,22 +335,16 @@ nimizado para um AF
 if __name__ == "__main__":
     
     nAfd = AFD("01")
+
     nAfd.carregar("afd1.txt")
 
-    nAfd_ = nAfd.remE_Inace()
-    print(nAfd_)
-    nAfd_.Compl_afd()
-
-    n_afd = nAfd_.min_afd()
 
     mul = AFD("01")
-    mul.carregar("afd.txt")
-    n_afd.mult_afd(mul)
+    mul.carregar("afd2.txt")
+    print(mul)
 
-    print(nAfd_)
-    r = nAfd_.mult_move(["110101","00101","11001"])
-    print(f"Multiplos Teste: {r}")
+    print(nAfd)
+    nAfd.mult_afd(mul)
 
-    print(f"\n\n{n_afd}")
-    r = n_afd.mult_move(["110101","00101","11001"])
-    print(f"Multiplos Teste: {r}")
+   
+    
