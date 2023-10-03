@@ -143,7 +143,7 @@ class AFD:
     '''
     2. Algoritmo de Minimização, incluindo:
     ... desenvolva um procedimento para calcular os estados equivalentes de um AFD.
-    ... desenvolva um procedimento para testar a equivalência entre dois AFD fornecidos.
+    ... desenvolva um procedimento para testar a equivalência entre dois AFD fornecidos.  --> FAZER AINDA
     ... desenvolva um procedimento para calcular o autômato miD fornecido.
 nimizado para um AF
     -> Requisitos:
@@ -300,47 +300,50 @@ nimizado para um AF
         n_AFD.setEstadoFinal(list(set(est_F)))
 
         return n_AFD
+    
+    '''
+    3. Algoritmos para operar com linguagens (conjuntos), incluindo:
+    ... desenvolva um procedimento para multiplicar dois AFDs
+    ... desenvolva procedimentos para união, intercessão, complemento e diferença
+    '''
+
+    def mult_afd(self,sAFD):
+        #Verificar se tem mesmo alfabeto:
+        if set(list(self.alfabeto)) != set(list(sAFD.alfabeto)):
+            return -1
+        
+        p_estado = self.estados
+        s_estado = sAFD.estados
+
+        # Multiplicação dos conjuntos
+        mult_estados = set([str(x) + str(y) for x in p_estado for y in s_estado])
+
+        
+        for i in mult_estados:
+            for letter in self.alfabeto:
+                key_one = self.transicoes[(i[0],letter)]
+                key_two = sAFD.transicoes[(i[1],letter)]
+
+                print(key_one,key_two)
+
+
+
                    
 
 if __name__ == "__main__":
     
     nAfd = AFD("01")
-   
-    nAfd.defEstados(['A','B','C','D','E','F','G','H'])
-    nAfd.setEstadoFinal(['C'])
-    nAfd.setEstadoInicial("A")
-
-    nAfd.setTransicao('A',0,'B')
-    nAfd.setTransicao('A',1,'F')
-
-    nAfd.setTransicao('B',0,'G')
-    nAfd.setTransicao('B',1,'C')
-
-    nAfd.setTransicao('C',0,'A')
-    nAfd.setTransicao('C',1,'C')
-
-    nAfd.setTransicao('D',0,'C')
-    nAfd.setTransicao('D',1,'G')
-
-    nAfd.setTransicao('E',0,'H')
-    nAfd.setTransicao('E',1,'F')
-
-    nAfd.setTransicao('F',0,'C')
-    nAfd.setTransicao('F',1,'G')
-
-    nAfd.setTransicao('G',0,'G')
-    nAfd.setTransicao('G',1,'E')
-
-    nAfd.setTransicao('H',0,'G')
-    nAfd.setTransicao('H',1,'C')
-
-    nAfd.salvar("afd1.txt")
+    nAfd.carregar("afd1.txt")
 
     nAfd_ = nAfd.remE_Inace()
     print(nAfd_)
     nAfd_.Compl_afd()
 
     n_afd = nAfd_.min_afd()
+
+    mul = AFD("01")
+    mul.carregar("afd.txt")
+    n_afd.mult_afd(mul)
 
     print(nAfd_)
     r = nAfd_.mult_move(["110101","00101","11001"])
