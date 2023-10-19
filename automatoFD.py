@@ -374,7 +374,13 @@ class AFD:
         afd.estados_final = list(estF_int)
         print(afd)
 
+    def complemento(self):
+        #Garantir q o AFD é Completo
+        afd = self.copyAFD()
+        afd.Compl_afd()
 
+        afd.estados_final = [estado for estado in afd.estados if estado not in afd.estados_final ]            
+        print(afd)
 
         
                    
@@ -391,8 +397,9 @@ if __name__ == "__main__":
     print(nAfd)
     #nAfd.mult_afd(mul)
 
-    nAfd.uniao(mul)
-    nAfd.intercessao(mul)
+    # nAfd.uniao(mul)
+    # nAfd.intercessao(mul)
 
-   
+    mul.complemento()
+    
     
