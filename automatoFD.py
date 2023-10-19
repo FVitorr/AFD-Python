@@ -261,10 +261,13 @@ class AFD:
 
 
     def min_afd(self):
+        #Remover Inacessiveis e completar o automato
+        nAFD = self.remE_Inace()
+        nAFD.Compl_afd()
         #Determinar estados
-        estado_eq = self.ver_equal()
+        estado_eq = nAFD.ver_equal()
         ren_estados = {} # old_valor : new_valor
-        n_est = [str(elemento) for elemento in self.estados]
+        n_est = [str(elemento) for elemento in nAFD.estados]
 
         for el in estado_eq:
             key1,key2 = el
@@ -282,7 +285,7 @@ class AFD:
         #print(n_estados)
         #Refazer transiçoes
         n_trans = {}
-        for trans, value in self.transicoes.items():
+        for trans, value in nAFD.transicoes.items():
             estado = ren_estados[trans[0]]
             letter = trans[1]
             destino = ren_estados[value]
@@ -291,12 +294,12 @@ class AFD:
         #print(n_trans)
 
         #Novo AFD MINIMIZADO
-        n_AFD = AFD(self.alfabeto)
+        n_AFD = AFD(nAFD.alfabeto)
         n_AFD.transicoes = n_trans
         
         n_AFD.defEstados(n_estados)
-        n_AFD.setEstadoInicial(ren_estados[self.estado_inicial])
-        est_F = [ren_estados[str(est)] for est in self.estados_final]
+        n_AFD.setEstadoInicial(ren_estados[nAFD.estado_inicial])
+        est_F = [ren_estados[str(est)] for est in nAFD.estados_final]
         n_AFD.setEstadoFinal(list(set(est_F)))
 
         return n_AFD
@@ -312,10 +315,14 @@ class AFD:
         if set(list(self.alfabeto)) != set(list(sAFD.alfabeto)):
             return -1
         
+        #Minimizar os automatos antes de multiplicar
+        afd1 = self.min_afd()
+        afd2 = sAFD.min_afd()
+        
         n = AFD(self.alfabeto)
 
-        p_estado = self.estados
-        s_estado = sAFD.estados
+        p_estado = afd1.estados
+        s_estado = afd2.estados
 
         # Multiplicação dos conjuntos
         mult_estados = set([(str(x) , str(y)) for x in p_estado for y in s_estado])
@@ -323,21 +330,27 @@ class AFD:
         transicao = {}
         for i in mult_estados:
             n.estados.append(str(i[0])+str(i[1]))
-            for letter in self.alfabeto:
-                key_one = self.transicoes[(i[0],letter)]
-                key_two = sAFD.transicoes[(i[1],letter)]
+            for letter in afd1.alfabeto:
+                key_one = afd1.transicoes[(i[0],letter)]
+                key_two = afd2.transicoes[(i[1],letter)]
 
                 transicao[(i[0]+i[1],letter)] = key_one + key_two
         
         #Definir estados Iniciais
-        n.setEstadoInicial(self.estado_inicial + sAFD.estado_inicial)
+        n.setEstadoInicial(afd1.estado_inicial + afd2.estado_inicial)
         #Definir Transiçoes
         n.transicoes = transicao
         print(n)
+        final = (afd1.estados_final,afd2.estados_final)
+        return n,final
 
 
     def uniao(self,sAfd):
-        pass
+        r = self.mult_afd(sAFD=sAfd)
+        print(r[1])
+        for i in r[0].estados:
+            print(i)
+ 
 
                    
 
@@ -346,13 +359,14 @@ if __name__ == "__main__":
     nAfd = AFD("01")
     nAfd.carregar("afd1.txt")
 
-
     mul = AFD("01")
     mul.carregar("afd2.txt")
     print(mul)
 
     print(nAfd)
-    nAfd.mult_afd(mul)
+    #nAfd.mult_afd(mul)
+
+    nAfd.uniao(mul)
 
    
     
