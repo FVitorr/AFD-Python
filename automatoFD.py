@@ -372,18 +372,23 @@ class AFD:
                 estF_int.add(p_estadoFinal)
 
         afd.estados_final = list(estF_int)
-        print(afd)
+        return afd
 
     def complemento(self):
-        #Garantir q o AFD é Completo
         afd = self.copyAFD()
+        #Garantir q o AFD é Completo
         afd.Compl_afd()
-
         afd.estados_final = [estado for estado in afd.estados if estado not in afd.estados_final ]            
         print(afd)
-
+        return afd
         
-                   
+    def diferença(self,subtraendo_AFD):
+        # B - A = Os estados finais de B com os estados não finais de A
+        sAFD = subtraendo_AFD.complemento()
+        return self.intercessao(sAFD)
+
+
+                      
 
 if __name__ == "__main__":
     
@@ -401,5 +406,7 @@ if __name__ == "__main__":
     # nAfd.intercessao(mul)
 
     mul.complemento()
+
+    nAfd.diferença(mul)
     
     
