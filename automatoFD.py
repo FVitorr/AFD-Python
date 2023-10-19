@@ -312,6 +312,8 @@ class AFD:
         if set(list(self.alfabeto)) != set(list(sAFD.alfabeto)):
             return -1
         
+        n = AFD(self.alfabeto)
+
         p_estado = self.estados
         s_estado = sAFD.estados
 
@@ -320,22 +322,28 @@ class AFD:
 
         transicao = {}
         for i in mult_estados:
+            n.estados.append(str(i[0])+str(i[1]))
             for letter in self.alfabeto:
                 key_one = self.transicoes[(i[0],letter)]
                 key_two = sAFD.transicoes[(i[1],letter)]
 
                 transicao[(i[0]+i[1],letter)] = key_one + key_two
         
-        print(transicao)
+        #Definir estados Iniciais
+        n.setEstadoInicial(self.estado_inicial + sAFD.estado_inicial)
+        #Definir Transiçoes
+        n.transicoes = transicao
+        print(n)
 
 
+    def uniao(self,sAfd):
+        pass
 
                    
 
 if __name__ == "__main__":
     
     nAfd = AFD("01")
-
     nAfd.carregar("afd1.txt")
 
 
