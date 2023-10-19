@@ -340,18 +340,43 @@ class AFD:
         n.setEstadoInicial(afd1.estado_inicial + afd2.estado_inicial)
         #Definir Transiçoes
         n.transicoes = transicao
-        print(n)
-        final = (afd1.estados_final,afd2.estados_final)
-        return n,final
+        return n,(afd1.estados_final,afd2.estados_final)
 
 
     def uniao(self,sAfd):
-        r = self.mult_afd(sAFD=sAfd)
-        print(r[1])
-        for i in r[0].estados:
-            print(i)
- 
+        #Selecionar Estados Finais 
+        afd, est_f = self.mult_afd(sAFD=sAfd)
+        estF_uniao = set()
 
+        for estado in afd.estados:
+            for final in est_f[0]:
+                if final in estado:
+                    estF_uniao.add(estado)
+
+            for final in est_f[1]:
+                if final in estado:
+                    estF_uniao.add(estado)
+        
+        afd.estados_final = list(estF_uniao)
+        print("Uniao: ",afd)
+        return afd
+ 
+    def intercessao(self,sAfd):
+        #Selecionar Estados Finais 
+        afd, est_f = self.mult_afd(sAFD=sAfd)
+        est_ft = set([str(i) + str(j) for i in est_f[0] for j in est_f[1]])
+        #Garantir q o estado existe no AFD
+        estF_int = set()
+        for p_estadoFinal in est_ft:
+            if p_estadoFinal in afd.estados:
+                estF_int.add(p_estadoFinal)
+
+        afd.estados_final = list(estF_int)
+        print(afd)
+
+
+
+        
                    
 
 if __name__ == "__main__":
@@ -367,6 +392,7 @@ if __name__ == "__main__":
     #nAfd.mult_afd(mul)
 
     nAfd.uniao(mul)
+    nAfd.intercessao(mul)
 
    
     
