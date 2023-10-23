@@ -70,6 +70,25 @@ class AFD:
             return True
         except:
             return False
+        
+    def ref_afd(self,n_estado: list):
+        if len(n_estado) != len(self.estados): return False
+        #Criar dic Old_name: New_name
+        rename = {}
+        i = 0
+        for est in sorted(self.estados):
+            rename[est] = n_estado[i]
+            i+=1
+        #print(rename)       
+        r_afd = AFD(self.alfabeto)
+        r_afd.defEstados(n_estado)
+        r_afd.setEstadoFinal([rename[est] for est in self.estados_final])
+        r_afd.setEstadoInicial(rename[self.estado_inicial])
+
+        for key in self.transicoes.keys():
+            r_afd.transicoes[(rename[key[0]],key[1])] = rename[self.transicoes[key]]
+
+        return r_afd
 
     def move(self, cadeia):
         self.__estadoAtual = self.estado_inicial
@@ -243,7 +262,7 @@ class AFD:
 
         #print(an)
 
-        #print(print_table(table=table))
+        print(print_table(table=table))
         # 4ª - Criar um novo AFD minimizado
         estados_eq = [key_ for key_ in table.keys() if table[key_] == 0]
         # n_est = [str(elemento) for elemento in est]
@@ -304,6 +323,36 @@ class AFD:
 
         return n_AFD
     
+
+
+    def eq_AFD(self,afd):
+        #remover estados sem acesso
+        self = self.remE_Inace()
+        afd = afd.remE_Inace()
+        #Verificar se os estados tem nomes iguais
+        if (set(self.estados) == set (afd.estados)):
+            #Mudar os estados de um automoto para evitar conflito na hora de verificar a equivalenia
+            afd = afd.ref_afd([ "q" +str(n) for n in range(0,len(afd.estados))])
+
+        #Criar um automo que possua a uniao dos estados dos automatos
+        uAFD = self.copyAFD()
+        if uAFD.alfabeto not in afd.alfabeto:
+            uAFD.alfabeto = uAFD.alfabeto + afd.alfabeto
+        
+        uAFD.estados = uAFD.estados + afd.estados
+        uAFD.estados_final = uAFD.estados_final + afd.estados_final
+        
+        for key in afd.transicoes.keys():
+            uAFD.transicoes[key] = afd.transicoes[key]
+
+        #Verificar Equivalencia entre os estados
+        est_eq = uAFD.ver_equal()
+        if (afd.estado_inicial,uAFD.estado_inicial) in est_eq:
+            return True
+        else:
+            return False
+        
+
     '''
     3. Algoritmos para operar com linguagens (conjuntos), incluindo:
     ... desenvolva um procedimento para multiplicar dois AFDs
@@ -405,8 +454,14 @@ if __name__ == "__main__":
     # nAfd.uniao(mul)
     # nAfd.intercessao(mul)
 
-    mul.complemento()
+    # print(mul.complemento())
 
-    nAfd.diferença(mul)
+    # print(nAfd.diferença(mul))
+
+    if (mul.eq_AFD(mul)):
+        print("Equivalente")
+    else:
+        print("n Equivalente")
+    #mul.ref_afd(["A","B","C","D"])
     
     
