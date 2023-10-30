@@ -5,6 +5,7 @@
 ... criar cópia do AFD.
 '''
 import random
+import xml.etree.ElementTree as xmlt
 letras = 'abcdefghijklmnopqrstuvwxyz'  # Sequência de letras minúsculas
 
 
@@ -35,7 +36,7 @@ class AFD:
         self.estados = [str(estado) for estado in estados]
 
     def newEstado(self,estado : str):
-        self.estados.append(estado)
+        self.estados.append(str(estado))
 
     def setEstadoInicial(self,estado: str):
         if str(estado) in str(self.estados):
@@ -149,6 +150,67 @@ class AFD:
         except Exception as e:
             print(f"Erro ao carregar o arquivo: {e}")
             return False
+        
+    def importJFLAG(self,arquivo: str):
+        rAFD = AFD('01')
+        with open(arquivo, "r") as file:
+            jff_content = file.read()
+        root = xmlt.fromstring(jff_content)
+        for state in root.findall(".//state"):
+            state_name = state.attrib["id"]
+            rAFD.newEstado(state_name)
+            if state.findall("initial"):
+                rAFD.setEstadoInicial(state_name)
+            if state.findall("final"):
+                rAFD.estados_final.append(state_name)
+        #OBTER ALFABETO
+        alf = set()
+        for transition in root.findall(".//transition"):
+            l = transition.find("read").text
+            if l != None:  alf.add(l)
+        rAFD.alfabeto = ''.join(sorted(list(alf)))
+
+        for transition in root.findall(".//transition"):
+            from_state = transition.find("from").text
+            to_state = transition.find("to").text
+            read_symbol = transition.find("read").text
+            rAFD.setTransicao(from_state, read_symbol, to_state)
+
+        return(rAFD)
+    
+    def exportJFLAG(self,arquivo):
+        #Verificar se os estados podem ser transformados para numericos:
+        cAFD = self.copyAFD()
+        for elemento in cAFD.estados:
+            if not str(elemento).isnumeric():
+                l = [str(n) for n in range (0,len(cAFD.estados))]
+                cAFD = cAFD.ref_afd(l)
+                
+        
+
+        xml_ = '''<?xml version="1.0" encoding="UTF-8" standalone="no"?><!--Created with JFLAP 7.1.--><structure>&#13;\n<type>fa</type>&#13;\n<automaton>&#13;\n\t<!--The list of states.-->&#13;'''
+
+        x,y = 80,70
+        ind = ""
+        for state in cAFD.estados:
+            if state in cAFD.estados_final: ind = '\n\t\t<final/>&#13;'
+            if state in cAFD.estado_inicial: ind = '\n\t\t<initial/>&#13;'
+            xml_ += f'''\n\t<state id="{state}" name="{'q'+str(state)}">&#13;\n\t\t<x>{x}</x>&#13;\n\t\t<y>{y}</y>&#13;{ind}\n\t</state>&#13;'''
+            x+= 100
+            y = 70 if y == 210 else 210
+            print(x,y)
+
+        
+        xml_ += "\n\t<!--The list of transitions.-->&#13;"
+        for trs in cAFD.transicoes.keys():
+            xml_ += f'''\n\t<transition>&#13;\n\t\t<from>{trs[0]}</from>&#13;\n\t\t<to>{cAFD.transicoes[trs]}</to>&#13;\n\t\t<read>{trs[1]}</read>&#13;\n\t</transition>&#13;'''
+        
+        xml_ += '\n</automaton>&#13;\n</structure>'
+        with open(arquivo, "w") as arq:
+            arq.write(xml_)
+
+
+        print(xml_)
 
     def copyAFD(self):
         nAfd = AFD(self.alfabeto)
@@ -248,21 +310,24 @@ class AFD:
                 if table[key_] >= 1: #Se for 0 não deve ser analisado
                     ch, ch1 = key_ #Chave para encontrar qm_chega ao estado com 1 simbolo
                     for i in chega[ch]:
-                        for j in chega[ch1]:
-                            if (i[1] == j[1]): #verificar se são mesma letras
-                                pair = (j[0], i[0])
-                                if pair not in an: 
-                                    an.append(pair)
-                                    for keys in table.keys():
-                                        if set(keys) == set(pair):
-                                            table[keys] += 1 #incrementar um a chave encontrada com a concatenção dos estados
-                                    changes = True  # Marcamos que houve uma mudança
+                        try: ####### VERIFICAR O TRYYY ########
+                            for j in chega[ch1]:
+                                if (i[1] == j[1]): #verificar se são mesma letras
+                                    pair = (j[0], i[0])
+                                    if pair not in an: 
+                                        an.append(pair)
+                                        for keys in table.keys():
+                                            if set(keys) == set(pair):
+                                                table[keys] += 1 #incrementar um a chave encontrada com a concatenção dos estados
+                                        changes = True  # Marcamos que houve uma mudança
+                        except:
+                            pass
             if not changes:
                 break  # Se não houver mudanças nesta iteração, saia do loop
 
         #print(an)
 
-        print(print_table(table=table))
+        #print(print_table(table=table))
         # 4ª - Criar um novo AFD minimizado
         estados_eq = [key_ for key_ in table.keys() if table[key_] == 0]
         # n_est = [str(elemento) for elemento in est]
@@ -285,6 +350,7 @@ class AFD:
         nAFD.Compl_afd()
         #Determinar estados
         estado_eq = nAFD.ver_equal()
+        print(estado_eq)
         ren_estados = {} # old_valor : new_valor
         n_est = [str(elemento) for elemento in nAFD.estados]
 
@@ -442,26 +508,33 @@ class AFD:
 if __name__ == "__main__":
     
     nAfd = AFD("01")
+    #nAfd.importJFLAG("jflap.jff")
+
     nAfd.carregar("afd1.txt")
+    nAfd.exportJFLAG("afd1.jff")
+
+    # print(nAfd.move("01011110"))
 
     mul = AFD("01")
     mul.carregar("afd2.txt")
-    print(mul)
+    mul.exportJFLAG("afd2.jff")
 
-    print(nAfd)
-    #nAfd.mult_afd(mul)
+    # print(mul)
+    # #print(nAfd)
+    # print("\n Equivalente: ",mul.min_afd())
+    # #nAfd.mult_afd(mul)
 
-    # nAfd.uniao(mul)
-    # nAfd.intercessao(mul)
+    # # nAfd.uniao(mul)
+    # # nAfd.intercessao(mul)
 
-    # print(mul.complemento())
+    # # print(mul.complemento())
 
-    # print(nAfd.diferença(mul))
+    # # print(nAfd.diferença(mul))
 
-    if (mul.eq_AFD(mul)):
-        print("Equivalente")
-    else:
-        print("n Equivalente")
-    #mul.ref_afd(["A","B","C","D"])
+    # if (nAfd.eq_AFD(nAfd.min_afd())):
+    #     print("Equivalente")
+    # else:
+    #     print("n Equivalente")
+    # #mul.ref_afd(["A","B","C","D"])
     
     
