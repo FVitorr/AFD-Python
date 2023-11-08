@@ -578,10 +578,10 @@ if __name__ == "__main__":
     else:  print("\nAFDs não equivalentes")
 
     # ------------------ Operacoes entre AFDs ---------------------
-    nAfd.importJFLAP("autB.jff")
-    nAfd_min.importJFLAP("autA.jff")
-    print(nAfd)
-    print(nAfd_min)
+    # nAfd.importJFLAP("autB.jff")
+    # nAfd_min.importJFLAP("autA.jff")
+    # print(nAfd)
+    # print(nAfd_min)
     a,b = nAfd.mult_afd(nAfd_min) #Multiplicação não traz estado final
     # print(a,b)
 
@@ -593,8 +593,6 @@ if __name__ == "__main__":
 
     nAfd_u = nAfd.uniao(nAfd_min)
     print(f"\nUniao:\n {nAfd_u}")
-
-    nAfd_u.exportJFLAP("uni.jff")
 
     nAfd_d = nAfd.diferenca(nAfd_min)
     print(f"\nDiferença:\n {nAfd_d}")
