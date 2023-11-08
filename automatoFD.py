@@ -4,9 +4,7 @@
 ... carregar o AFD de um arquivo texto;
 ... criar cópia do AFD.
 '''
-import random
 import xml.etree.ElementTree as xmlt
-letras = 'abcdefghijklmnopqrstuvwxyz'  # Sequência de letras minúsculas
 
 
 
@@ -95,13 +93,11 @@ class AFD:
         self.__estadoAtual = self.estado_inicial
         for simbolo in  cadeia:
             if not simbolo in self.alfabeto:
-                self.__deuErro = True
                 return -1
             if (str(self.__estadoAtual), str(simbolo)) in self.transicoes.keys():
                 novoEstado = self.transicoes[(str(self.__estadoAtual), str(simbolo))]
                 self.__estadoAtual = novoEstado
             else:
-                self.__deuErro = True
                 return -1 
             
         return self.__estadoAtual
@@ -151,34 +147,37 @@ class AFD:
             print(f"Erro ao carregar o arquivo: {e}")
             return False
         
-    def importJFLAG(self,arquivo: str):
-        rAFD = AFD('01')
+    def importJFLAP(self,arquivo: str):
+        self.estados_final = []
+        new_state = []
         with open(arquivo, "r") as file:
             jff_content = file.read()
         root = xmlt.fromstring(jff_content)
         for state in root.findall(".//state"):
             state_name = state.attrib["id"]
-            rAFD.newEstado(state_name)
+            new_state.append(state_name)
+            # self.newEstado(state_name)
             if state.findall("initial"):
-                rAFD.setEstadoInicial(state_name)
+                self.setEstadoInicial(state_name)
             if state.findall("final"):
-                rAFD.estados_final.append(state_name)
+                self.estados_final.append(state_name)
         #OBTER ALFABETO
+        self.estados = new_state
         alf = set()
         for transition in root.findall(".//transition"):
             l = transition.find("read").text
             if l != None:  alf.add(l)
-        rAFD.alfabeto = ''.join(sorted(list(alf)))
+        self.alfabeto = ''.join(sorted(list(alf)))
 
+        self.transicoes = {}
         for transition in root.findall(".//transition"):
             from_state = transition.find("from").text
             to_state = transition.find("to").text
             read_symbol = transition.find("read").text
-            rAFD.setTransicao(from_state, read_symbol, to_state)
+            self.setTransicao(from_state, read_symbol, to_state)
 
-        return(rAFD)
-    
-    def exportJFLAG(self,arquivo):
+        return True
+    def exportJFLAP(self,arquivo):
         #Verificar se os estados podem ser transformados para numericos:
         cAFD = self.copyAFD()
         for elemento in cAFD.estados:
@@ -191,26 +190,26 @@ class AFD:
         xml_ = '''<?xml version="1.0" encoding="UTF-8" standalone="no"?><!--Created with JFLAP 7.1.--><structure>&#13;\n<type>fa</type>&#13;\n<automaton>&#13;\n\t<!--The list of states.-->&#13;'''
 
         x,y = 80,70
-        ind = ""
         for state in cAFD.estados:
+            ind = ""
             if state in cAFD.estados_final: ind = '\n\t\t<final/>&#13;'
             if state in cAFD.estado_inicial: ind = '\n\t\t<initial/>&#13;'
             xml_ += f'''\n\t<state id="{state}" name="{'q'+str(state)}">&#13;\n\t\t<x>{x}</x>&#13;\n\t\t<y>{y}</y>&#13;{ind}\n\t</state>&#13;'''
             x+= 100
             y = 70 if y == 210 else 210
-            print(x,y)
-
         
         xml_ += "\n\t<!--The list of transitions.-->&#13;"
         for trs in cAFD.transicoes.keys():
             xml_ += f'''\n\t<transition>&#13;\n\t\t<from>{trs[0]}</from>&#13;\n\t\t<to>{cAFD.transicoes[trs]}</to>&#13;\n\t\t<read>{trs[1]}</read>&#13;\n\t</transition>&#13;'''
         
         xml_ += '\n</automaton>&#13;\n</structure>'
+        if ".jff" not in str(arquivo): return False
         with open(arquivo, "w") as arq:
             arq.write(xml_)
 
 
-        print(xml_)
+        #print(xml_)
+        return True
 
     def copyAFD(self):
         nAfd = AFD(self.alfabeto)
@@ -224,7 +223,7 @@ class AFD:
     '''
     2. Algoritmo de Minimização, incluindo:
     ... desenvolva um procedimento para calcular os estados equivalentes de um AFD.
-    ... desenvolva um procedimento para testar a equivalência entre dois AFD fornecidos.  --> FAZER AINDA
+    ... desenvolva um procedimento para testar a equivalência entre dois AFD fornecidos.  
     ... desenvolva um procedimento para calcular o autômato miD fornecido.
     nimizado para um AF
     -> Requisitos:
@@ -284,6 +283,7 @@ class AFD:
         key = [set((str(j), str(i))) for j in non_final_states for i in self.estados_final]
 
         table, key_list = create_dict()
+        #print(key_list)
         for key_ in table.keys():
             if set(key_) in key:
                 table[key_] = 1
@@ -309,19 +309,20 @@ class AFD:
             for key_ in key_list: #Key_list variaveis marcadas na primeira etapa
                 if table[key_] >= 1: #Se for 0 não deve ser analisado
                     ch, ch1 = key_ #Chave para encontrar qm_chega ao estado com 1 simbolo
-                    for i in chega[ch]:
-                        try: ####### VERIFICAR O TRYYY ########
-                            for j in chega[ch1]:
-                                if (i[1] == j[1]): #verificar se são mesma letras
-                                    pair = (j[0], i[0])
-                                    if pair not in an: 
-                                        an.append(pair)
-                                        for keys in table.keys():
-                                            if set(keys) == set(pair):
-                                                table[keys] += 1 #incrementar um a chave encontrada com a concatenção dos estados
-                                        changes = True  # Marcamos que houve uma mudança
-                        except:
-                            pass
+                    try: ####### VERIFICAR O TRYYY ########
+                        for i in chega[ch]:
+                            # try: ####### VERIFICAR O TRYYY ########
+                                for j in chega[ch1]:
+                                    if (i[1] == j[1]): #verificar se são mesma letras
+                                        pair = (j[0], i[0])
+                                        if pair not in an: 
+                                            an.append(pair)
+                                            for keys in table.keys():
+                                                if set(keys) == set(pair):
+                                                    table[keys] += 1 #incrementar um a chave encontrada com a concatenção dos estados
+                                            changes = True  # Marcamos que houve uma mudança
+                    except:
+                        pass
             if not changes:
                 break  # Se não houver mudanças nesta iteração, saia do loop
 
@@ -350,7 +351,7 @@ class AFD:
         nAFD.Compl_afd()
         #Determinar estados
         estado_eq = nAFD.ver_equal()
-        print(estado_eq)
+        #print(estado_eq)
         ren_estados = {} # old_valor : new_valor
         n_est = [str(elemento) for elemento in nAFD.estados]
 
@@ -396,10 +397,16 @@ class AFD:
         self = self.remE_Inace()
         afd = afd.remE_Inace()
         #Verificar se os estados tem nomes iguais
-        if (set(self.estados) == set (afd.estados)):
-            #Mudar os estados de um automoto para evitar conflito na hora de verificar a equivalenia
-            afd = afd.ref_afd([ "q" +str(n) for n in range(0,len(afd.estados))])
-
+        a = 0
+        for i in self.estados:
+            for j in afd.estados:
+                if (i == j):
+                #Mudar os estados de um automoto para evitar conflito na hora de verificar a equivalenia
+                    afd = afd.ref_afd([ "q" +str(n) for n in range(0,len(afd.estados))])
+                    a = 1
+                    break
+            if (a == 1):
+                break
         #Criar um automo que possua a uniao dos estados dos automatos
         uAFD = self.copyAFD()
         if uAFD.alfabeto not in afd.alfabeto:
@@ -473,7 +480,6 @@ class AFD:
                     estF_uniao.add(estado)
         
         afd.estados_final = list(estF_uniao)
-        print("Uniao: ",afd)
         return afd
  
     def intercessao(self,sAfd):
@@ -494,10 +500,9 @@ class AFD:
         #Garantir q o AFD é Completo
         afd.Compl_afd()
         afd.estados_final = [estado for estado in afd.estados if estado not in afd.estados_final ]            
-        print(afd)
         return afd
         
-    def diferença(self,subtraendo_AFD):
+    def diferenca(self,subtraendo_AFD):
         # B - A = Os estados finais de B com os estados não finais de A
         sAFD = subtraendo_AFD.complemento()
         return self.intercessao(sAFD)
@@ -507,34 +512,89 @@ class AFD:
 
 if __name__ == "__main__":
     
-    nAfd = AFD("01")
-    #nAfd.importJFLAG("jflap.jff")
+    #Criar AFD
+    nAfd = AFD("ab")#Definir Alfabeto
+    nAfd.defEstados(["0","1","2","3","4","5"])#Definir Estados
+    nAfd.setEstadoInicial("0")#Definir Estado Inicial
+    nAfd.setEstadoFinal(["0","4","5"])#Definir Estados Finais
 
-    nAfd.carregar("afd1.txt")
-    nAfd.exportJFLAG("afd1.jff")
+    #------------------Fazer transicoes --------------------#
+    nAfd.setTransicao("0","a","2")
+    nAfd.setTransicao("0","b","1")
 
-    # print(nAfd.move("01011110"))
+    nAfd.setTransicao("1","a","1")
+    nAfd.setTransicao("1","b","0")
 
-    mul = AFD("01")
-    mul.carregar("afd2.txt")
-    mul.exportJFLAG("afd2.jff")
+    nAfd.setTransicao("2","a","4")
+    nAfd.setTransicao("2","b","5")
 
-    # print(mul)
-    # #print(nAfd)
-    # print("\n Equivalente: ",mul.min_afd())
-    # #nAfd.mult_afd(mul)
+    nAfd.setTransicao("3","a","5")
+    nAfd.setTransicao("3","b","4")
 
-    # # nAfd.uniao(mul)
-    # # nAfd.intercessao(mul)
+    nAfd.setTransicao("4","a","3")
+    nAfd.setTransicao("4","b","2")
 
-    # # print(mul.complemento())
+    nAfd.setTransicao("5","a","2")
+    nAfd.setTransicao("5","b","3")
 
-    # # print(nAfd.diferença(mul))
-
-    # if (nAfd.eq_AFD(nAfd.min_afd())):
-    #     print("Equivalente")
-    # else:
-    #     print("n Equivalente")
-    # #mul.ref_afd(["A","B","C","D"])
+    print(nAfd)
     
+    #-------- Arquivos ------------
+    nome_arq = "AFD2.txt"
+    nome_jflap = "AFD2.jff"
+    # if (nAfd.salvar(nome_arq)):print(f"AFD Salvo com sucesso: '{nome_arq}'")
+    # if (nAfd.exportJFLAP(nome_jflap)):print(f"AFD exportado para JFLAP: '{nome_jflap}'")
     
+    # nome_arq = "AFD1.txt"
+    # if (nAfd.carregar(nome_arq)):
+    #     print(f"\nAFD Carregado: {nome_arq}")
+    #     print(nAfd)
+
+    # nome_jflap = "AFD1.jff"
+    # if (nAfd.importJFLAP(nome_jflap)):
+    #     print(f"\nAFD Importado: {nome_jflap}")
+    #     print(nAfd)
+
+    #------------- Testar Cadeia -------------------
+    print("\nTeste Cadeias:")
+    mov = ["aaaa","bbaabb","aabba","aaabbaaaabba"]
+    mult_move = nAfd.mult_move(mov)
+    for i in mult_move: print (f"{i}  {mult_move[i]}")
+
+    #------------- Equivalencia  -----------------
+
+    est_equivalentes = nAfd.ver_equal()
+    print(f"\nEstados Equivalentes: {est_equivalentes}")
+
+    nAfd_min = nAfd.min_afd()
+    print("AFD Minimizado:\n",nAfd_min)
+
+    # nome_jflap = "AFD.jff"
+    # if (nAfd_min.exportJFLAP(nome_jflap)):print(f"AFD exportado para JFLAP: '{nome_jflap}'")
+
+    #Verificar Equvalencia entre automatos
+    #nAfd_min.importJFLAP("autA.jff")
+    if (nAfd.eq_AFD(nAfd_min)): print("\nAFDs equivalentes")
+    else:  print("\nAFDs não equivalentes")
+
+    # ------------------ Operacoes entre AFDs ---------------------
+    nAfd.importJFLAP("autB.jff")
+    nAfd_min.importJFLAP("autA.jff")
+    print(nAfd)
+    print(nAfd_min)
+    a,b = nAfd.mult_afd(nAfd_min) #Multiplicação não traz estado final
+    # print(a,b)
+
+    nAfd_c = nAfd.complemento()
+    print(f"\nComplemento:\n {nAfd_c}")
+
+    nAfd_i = nAfd.intercessao(nAfd_min)
+    print(f"\nIntercessão:\n {nAfd_i}")
+
+    nAfd_u = nAfd.uniao(nAfd_min)
+    print(f"\nUniao:\n {nAfd_u}")
+
+    nAfd_u.exportJFLAP("uni.jff")
+
+    nAfd_d = nAfd.diferenca(nAfd_min)
+    print(f"\nDiferença:\n {nAfd_d}")
